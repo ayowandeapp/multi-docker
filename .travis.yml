@@ -1,15 +1,24 @@
 sudo: required
-services: 
+language: generic
+
+services:
   - docker
 
 before_install:
-  -docker build -t ayowandeapp/react-test -f ./client/Dockerfile.dev ./client
+  - docker build -t ayowandeapp/react-test -f ./client/Dockerfile.dev ./client
 
 script:
-  - docker run ayowandeapp/react-test npm test -- --converage
+  - docker run -e CI=true ayowandeapp/react-test npm test
 
 after_success:
   - docker build -t ayowandeapp/multi-client ./client
-  - docker build -t ayowandeapp/muilti-nginx ./nginx
+  - docker build -t ayowandeapp/multi-nginx ./nginx
   - docker build -t ayowandeapp/multi-server ./server
   - docker build -t ayowandeapp/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push ayowandeapp/multi-client
+  - docker push ayowandeapp/multi-nginx
+  - docker push ayowandeapp/multi-server
+  - docker push ayowandeapp/multi-worker
